@@ -8,7 +8,7 @@ from sklearn.externals.six.moves import xrange
 
 from .base import BaseClassifier, BaseRegressor
 from .dataset_fast import get_dataset
-from .sag_fast import _sag_fit
+from .sag_fast import _sag_fit, _sag2_fit
 
 from .sgd_fast import ModifiedHuber
 from .sgd_fast import SmoothHinge
@@ -61,11 +61,19 @@ class _BaseSAG(object):
         for i in xrange(n_vectors):
             y = Y[:, i]
 
-            _sag_fit(self, ds, y, self.coef_[i], self.coef_scale_[i:], grad[i],
-                     self.eta, self.alpha, self.beta, loss, penalty,
-                     self.max_iter, n_inner, self.tol, self.verbose,
-                     self.callback, rng, self.is_saga)
+            if self.diag_probas is None:
 
+                _sag_fit(self, ds, y, self.coef_[i], self.coef_scale_[i:], grad[i],
+                         self.eta, self.alpha, self.beta, loss, penalty,
+                         self.max_iter, n_inner, self.tol, self.verbose,
+                         self.callback, rng, self.is_saga)
+
+            else:
+                _sag2_fit(self, ds, y, self.coef_[i], self.coef_scale_[i:], grad[i],
+                         self.diag_probas,
+                         self.eta, self.alpha, self.beta, loss, penalty,
+                         self.max_iter, n_inner, self.tol, self.verbose,
+                         self.callback, rng, self.is_saga)
         return self
 
 
@@ -121,6 +129,7 @@ class SAGClassifier(BaseClassifier, _BaseSAG):
         self.callback = callback
         self.random_state = random_state
         self.is_saga = False
+        self.diag_probas = None
 
     def fit(self, X, y):
         if not self.is_saga and self.penalty is not None:
@@ -175,12 +184,14 @@ class SAGAClassifier(SAGClassifier):
 
     def __init__(self, eta=1.0, alpha=1.0, beta=0.0, loss="smooth_hinge",
                  penalty=None, gamma=1.0,  max_iter=10, n_inner=1.0,
-                 tol=1e-3, verbose=0, callback=None, random_state=None):
+                 tol=1e-3, verbose=0, callback=None, random_state=None,
+                 diag_probas=None):
             super(SAGAClassifier, self).__init__(
                 eta=eta, alpha=alpha, beta=beta, loss=loss, penalty=penalty,
                 gamma=gamma, max_iter=max_iter, n_inner=n_inner, tol=tol,
                 verbose=verbose, callback=callback, random_state=random_state)
             self.is_saga = True
+            self.diag_probas = diag_probas
 
 
 class SAGRegressor(BaseRegressor, _BaseSAG):
