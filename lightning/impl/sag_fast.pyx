@@ -29,7 +29,17 @@ cdef class Penalty:
                          double w_scale,
                          int n_nz):
         raise NotImplementedError()
-    
+
+    cdef void projection_probas(self,
+                         double* w,
+                         int* indices,
+                         double stepsize,
+                         double w_scale,
+                         int n_nz,
+                         np.ndarray[double, ndim=1] probas
+                         ):
+        raise NotImplementedError()
+
     cdef void projection_lagged(self,
                                 double* w,
                                 int* indices,
@@ -60,6 +70,23 @@ cdef class L1Penalty(Penalty):
             j = indices[jj]
             w[j] = fmax(w[j] - stepsize * w_scale, 0) \
                     - fmax(-w[j] - stepsize * w_scale, 0)
+
+    cdef void projection_probas(self,
+                         double* w,
+                         int* indices,
+                         double stepsize,
+                         double w_scale,
+                         int n_nz,
+                         np.ndarray[double, ndim=1] probas
+                         ):
+
+        cdef int j, jj
+
+        for jj in xrange(n_nz):
+            j = indices[jj]
+            w[j] = fmax(w[j] - stepsize * w_scale / probas[j], 0) \
+                    - fmax(-w[j] - stepsize * w_scale / probas[j], 0)
+
 
     cdef void projection_lagged(self,
                                 double* w,
@@ -446,19 +473,13 @@ def _sag2_fit(self,
                 for j in range(n_nz):
                     jj = indices[j]
                     w[jj] -= eta_avg * (g_sum[jj] + n_samples * alpha * w[jj])  / (diag_probas[jj] * w_scale[0])
-            else:
-                print("This will not work")
-                1/0
 
-                ### gradient-average part of the step
-                #_lagged_update(t+1, w, g_sum, scale_cumm, indices,
-                #               w_scale[0], n_nz, last, eta_avg)
+                if penalty is not None:
+                    #penalty.projection(
+                    #    w, all_indices, beta * eta, w_scale[0], n_features)
 
-                # prox step
-                #if penalty is not None:
-                #    penalty.projection_lagged(w, indices, beta * eta,
-                #                              scale_cumm, t + 1, n_nz,
-                #                              last_penalty_update)
+                    penalty.projection_probas(
+                        w, indices, beta * eta, w_scale[0], n_nz, diag_probas)
 
             # Update g_sum.
             _add(data, indices, n_nz, g_change, g_sum)
@@ -467,9 +488,9 @@ def _sag2_fit(self,
         # Finalize.
         #_lagged_update(n_inner, w, g_sum, scale_cumm, all_indices,
         #               w_scale[0], n_features, last, eta_avg)
-        if penalty is not None:
-            penalty.projection_lagged(w, all_indices, beta * eta, scale_cumm,
-                                      n_inner, n_features, last_penalty_update)
+        #if penalty is not None:
+        #    penalty.projection_lagged(w, all_indices, beta * eta, scale_cumm,
+        #                              n_inner, n_features, last_penalty_update)
         for j in range(n_features):
             last[j] = 0
             last_penalty_update[j] = 0

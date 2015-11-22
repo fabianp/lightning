@@ -9,7 +9,16 @@ cdef class Penalty:
                          double stepsize,
                          double w_scale,
                          int n_nz)
-    
+
+    cdef void projection_probas(self,
+                         double* w,
+                         int* indices,
+                         double stepsize,
+                         double w_scale,
+                         int n_nz,
+                         np.ndarray[double, ndim=1] probas
+                         )
+
     cdef void projection_lagged(self,
                                 double* w,
                                 int* indices,
