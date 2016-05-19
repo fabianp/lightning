@@ -191,7 +191,8 @@ def _sag_fit(self,
              callback,
              RandomState rng,
              bint saga,
-             int adaptive_eta):
+             int adaptive_eta,
+             int batchsize):
 
     cdef int n_samples = X.get_n_samples()
     cdef int n_features = X.get_n_features()
@@ -286,7 +287,10 @@ def _sag_fit(self,
 
         # Inner loop.
         for t in range(n_inner):
-            i = rng.randint(n_samples - 1)
+            i = rng.randint((n_samples - 1) // batchsize)
+            # at the boundary change the size of the batch
+            for t_batch in range(batchsize):
+
 
             # Retrieve sample i.
             X.get_row_ptr(i, &indices, &data, &n_nz)
