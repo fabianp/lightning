@@ -34,6 +34,10 @@ def configuration(parent_package='', top_path=None):
                          sources=['primal_cd_fast.cpp'],
                          include_dirs=[numpy.get_include(), randomdir])
 
+    config.add_extension('prox_fast',
+                         sources=['prox_fast.cpp'],
+                         include_dirs=[numpy.get_include(), randomdir])
+
     config.add_extension('sag_fast',
                          sources=['sag_fast.cpp'],
                          include_dirs=[numpy.get_include(), randomdir])
@@ -47,8 +51,8 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=[numpy.get_include(), randomdir])
 
     config.add_extension('svrg_fast',
-                         sources=['svrg_fast.cpp'],
-                         include_dirs=[numpy.get_include(), randomdir])
+                        sources=['svrg_fast.cpp'],
+                        include_dirs = [numpy.get_include(), randomdir])
 
     config.add_subpackage('datasets')
     config.add_subpackage('randomkit')
