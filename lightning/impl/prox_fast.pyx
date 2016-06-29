@@ -10,7 +10,65 @@
 These are some helper functions to compute the proximal operator of some common penalties
 """
 
+import numpy as np
 cimport numpy as np
+
+cpdef prox_tv2d(np.ndarray[ndim=2, dtype=double] w, double stepsize,
+                int max_iter=100, double tol=1e-3, callback=None):
+    """
+    Computes the proximal operator of the 2-dimensional total variation
+    operator by Douglas-Rachford splitting.
+
+    This solves a problem of the form
+
+         argmin_x TV(x) + (1/(2 stepsize)) ||x - w||^2
+
+    where TV(x) is the one-dimensional total variation
+
+    Parameters
+    ----------
+    w: array
+        vector of coefficieents
+
+    stepsize: float
+        step size (sometimes denoted gamma) in proximal objective function
+
+    max_iter: int
+        maximum number of iterations
+
+    tol: float
+        Absolute tolerance of stopping criterion
+
+    Returns
+    -------
+    None, operates in-place
+
+    References
+    ----------
+    Barbero, Á., & Sra, S. (2014). Modular proximal optimization for multidimensional
+    total-variation regularization. Retrieved from http://arxiv.org/abs/1411.0589
+    """
+    cdef np.ndarray[ndim=2, dtype=double] z = w.T.copy()
+    cdef size_t n_rows = w.shape[0]
+    cdef size_t n_cols = w.shape[1]
+    cdef size_t it, i, j
+    cdef double current_tol
+    for it in range(max_iter):
+        # apply the proximal operator through columns
+        w[:] = z.T[:]
+        for i in range(n_rows):
+            prox_tv1d(w[i], stepsize)
+        z[:] = 2 * w.T[:] - z[:]
+        for j in range(n_cols):
+            prox_tv1d(z[j], stepsize)
+
+        if it % 10 == 9:
+            print(np.abs(w - z.T).sum())
+            if np.abs(w - z.T).sum() < tol * n_rows * n_cols:
+                break
+        if callback is not None:
+            callback(w)
+
 
 cpdef prox_tv1d(np.ndarray[ndim=1, dtype=double] w, double stepsize):
     """
@@ -28,6 +86,10 @@ cpdef prox_tv1d(np.ndarray[ndim=1, dtype=double] w, double stepsize):
         vector of coefficieents
     stepsize: float
         step size (sometimes denoted gamma) in proximal objective function
+
+    Returns
+    -------
+    None, operates in-place
 
     References
     ----------
