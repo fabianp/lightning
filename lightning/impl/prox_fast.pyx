@@ -64,7 +64,7 @@ cpdef prox_tv2d(np.ndarray[ndim=2, dtype=double] w, double stepsize,
 
         if it % 10 == 9:
             print(np.abs(w - z.T).sum())
-            if np.abs(w - z.T).sum() < tol * n_rows * n_cols:
+            if np.abs(w - z.T).sum() < tol:
                 break
         if callback is not None:
             callback(w)
